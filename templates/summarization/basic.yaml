@@ -1,1 +1,21 @@
 
+name: summarization_basic
+description: Summarizes text into concise bullet points
+
+inputs:
+  - name: text
+    type: string
+    required: true
+
+prompt:
+  system: |
+    You are a helpful assistant that summarizes content clearly and concisely.
+
+  user: |
+    Summarize the following text in 5 bullet points:
+    {{text}}
+
+parameters:
+  temperature: 0.3
+  max_tokens: 300
+
