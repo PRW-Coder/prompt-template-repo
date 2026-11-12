@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Places I've Been</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>🌍 Places I've Been</h1>
+    <form id="search-form" class="search" autocomplete="off">
+      <input id="search-input" type="search" placeholder="Search a city, landmark or address…" aria-label="Search for a place">
+      <button type="submit">Search</button>
+      <ul id="search-results" class="search-results" hidden></ul>
+    </form>
+  </header>
+
+  <main class="layout">
+    <section id="map" aria-label="World map"></section>
+
+    <aside class="sidebar">
+      <div class="stats">
+        <div class="stat"><span id="stat-places">0</span><label>Places</label></div>
+        <div class="stat"><span id="stat-countries">0</span><label>Countries</label></div>
+        <div class="stat"><span id="stat-continents">0</span><label>Continents</label></div>
+      </div>
+
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="places" role="tab">Places A–Z</button>
+        <button class="tab" data-tab="countries" role="tab">By country</button>
+      </nav>
+
+      <div class="tab-panel" id="panel-places">
+        <input id="filter-input" class="filter" type="search" placeholder="Filter list…" aria-label="Filter places">
+        <ul id="places-list" class="list"></ul>
+        <p id="places-empty" class="empty">No places yet. Click anywhere on the map or search above to add your first pin.</p>
+      </div>
+
+      <div class="tab-panel" id="panel-countries" hidden>
+        <ul id="countries-list" class="list"></ul>
+      </div>
+
+      <footer class="data-actions">
+        <button id="export-btn" type="button">Export</button>
+        <label class="import-label">Import<input id="import-input" type="file" accept="application/json" hidden></label>
+        <button id="clear-btn" type="button" class="danger">Clear all</button>
+      </footer>
+    </aside>
+  </main>
+
+  <template id="popup-template">
+    <form class="pin-form">
+      <label>Place name<input name="name" required></label>
+      <label>Country<input name="country"></label>
+      <label>Date visited<input name="date" type="month"></label>
+      <label>Notes<textarea name="notes" rows="2"></textarea></label>
+      <div class="pin-actions">
+        <button type="submit">Save</button>
+        <button type="button" class="delete danger">Delete</button>
+      </div>
+    </form>
+  </template>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="continents.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
