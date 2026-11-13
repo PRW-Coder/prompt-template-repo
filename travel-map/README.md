@@ -26,10 +26,11 @@ You can also open `index.html` directly, or host the folder on GitHub Pages, Net
 
 ## How it works
 
-- Map: [Leaflet](https://leafletjs.com/) with [CARTO](https://carto.com/basemaps) basemap tiles built from [OpenStreetMap](https://www.openstreetmap.org/) data. They're free, need no key, and work even when `index.html` is opened straight from disk. (OpenStreetMap's own tile servers block pages opened that way.)
+- Map: [Leaflet](https://leafletjs.com/) with Esri World Street Map tiles. They're free, need no key, and load even when `index.html` is opened straight from disk. (OpenStreetMap's and CARTO's tile servers refuse pages opened that way.)
+- Offline backup map: if the online map can't load, the app switches to bundled country outlines (`world.js`, from [Natural Earth](https://www.naturalearthdata.com/)), so you always have a world map to pin on.
 - Place lookup and search: OpenStreetMap's [Nominatim](https://nominatim.org/) geocoder, falling back to [Photon](https://photon.komoot.io/) if Nominatim refuses the request. Both are free for light personal use.
 - Storage: your pins are saved in the browser's `localStorage`. They stay on that browser only, so use **Export** to keep a backup.
 
 ### Why not Google Maps?
 
-Google Maps needs a Google Cloud API key with billing enabled. Leaflet + OpenStreetMap gives the same pin-on-a-map experience for free. You could swap Google Maps in later by replacing the map code at the top of `app.js`.
+Google Maps needs a Google Cloud API key with billing enabled. Leaflet + OpenStreetMap gives the same pin-on-a-map experience for free. You could swap Google Maps in later by replacing the map tile code near the top of `app.js`.

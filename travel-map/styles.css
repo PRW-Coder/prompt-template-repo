@@ -225,3 +225,6 @@ button, input, textarea { font: inherit; color: inherit; }
   .sidebar { border-left: 0; border-top: 1px solid var(--border); }
   .tab-panel { max-height: 50vh; }
 }
+
+/* Clicking a country on the offline map would otherwise draw a focus box around its outline. */
+.leaflet-overlay-pane path.leaflet-interactive:focus { outline: none; }

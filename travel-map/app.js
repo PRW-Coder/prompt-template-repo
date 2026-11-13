@@ -32,14 +32,41 @@
 
   // ---------- Map ----------
   const map = L.map('map', { worldCopyJump: true, minZoom: 2 }).setView([25, 10], 2);
-  // CARTO basemap tiles (free, no key). Unlike tile.openstreetmap.org, they also load
-  // when index.html is opened straight from disk (file://), which sends no Referer.
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    subdomains: 'abcd',
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  }).addTo(map);
+  // Esri World Street Map tiles: free, no API key, and no Referer check, so they also load
+  // when index.html is opened straight from disk (file://). OpenStreetMap's and CARTO's
+  // tile servers both refuse that.
+  map.getContainer().style.background = '#aad3df'; // sea colour behind the offline outlines
+  const tiles = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, USGS, NGA, EPA, NPS',
+    }
+  ).addTo(map);
+
+  // Offline fallback: if online tiles fail, draw the bundled country outlines (world.js),
+  // so there is always a usable world map, even with no internet connection.
+  let tileOk = 0;
+  let tileFail = 0;
+  let offlineLayer = null;
+  function useOfflineMap() {
+    if (offlineLayer || !window.WORLD_COUNTRIES) return;
+    map.removeLayer(tiles);
+    offlineLayer = L.geoJSON(window.WORLD_COUNTRIES, {
+      style: { color: '#8a9aa8', weight: 0.8, fillColor: '#f2efe9', fillOpacity: 1 },
+      onEachFeature: (f, layer) => layer.bindTooltip(f.properties.name, { sticky: true, direction: 'top' }),
+    }).addTo(map);
+    // Clicks on a country bubble up to the map's click handler, which drops the pin.
+    offlineLayer.bringToBack();
+    map.attributionControl.addAttribution('Offline map: Natural Earth');
+  }
+  tiles.on('tileload', () => tileOk++);
+  tiles.on('tileerror', () => {
+    tileFail++;
+    if (tileFail >= 4 && tileOk === 0) useOfflineMap();
+  });
+  // If no tile has loaded after a while (e.g. requests hang), switch too.
+  setTimeout(() => { if (tileOk === 0) useOfflineMap(); }, 8000);
 
   const pinIcon = L.divIcon({
     className: 'pin-icon',
