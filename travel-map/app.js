@@ -32,9 +32,13 @@
 
   // ---------- Map ----------
   const map = L.map('map', { worldCopyJump: true, minZoom: 2 }).setView([25, 10], 2);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // CARTO basemap tiles (free, no key). Unlike tile.openstreetmap.org, they also load
+  // when index.html is opened straight from disk (file://), which sends no Referer.
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    subdomains: 'abcd',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   }).addTo(map);
 
   const pinIcon = L.divIcon({
@@ -125,7 +129,7 @@
 
   const round = (n) => Math.round(n * 1e5) / 1e5;
 
-  // ---------- Geocoding (OpenStreetMap Nominatim, free, no key) ----------
+  // ---------- Geocoding (free, no key) ----------
   function bestName(addr, fallback) {
     return (
       addr.city || addr.town || addr.village || addr.hamlet || addr.municipality ||
@@ -133,25 +137,67 @@
     );
   }
 
-  async function reverseGeocode(lat, lng) {
-    const url = `${NOMINATIM}/reverse?format=jsonv2&zoom=10&addressdetails=1&accept-language=en&lat=${lat}&lon=${lng}`;
+  // Nominatim is tried first; if it refuses (it can when the page is opened from disk),
+  // Photon (photon.komoot.io, also free and keyless) is used instead.
+  const PHOTON = 'https://photon.komoot.io';
+
+  async function getJson(url) {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error('reverse geocode failed');
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    const addr = data.address || {};
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+
+  // Convert a Photon GeoJSON feature to the Nominatim-like shape the rest of the app uses.
+  function fromPhoton(f) {
+    const p = f.properties || {};
+    const [lon, lat] = f.geometry.coordinates;
+    const label = [p.name, p.city !== p.name ? p.city : '', p.state, p.country].filter(Boolean).join(', ');
     return {
-      name: bestName(addr, data.name),
+      name: p.name || p.city || '',
+      display_name: label || `${lat}, ${lon}`,
+      lat: String(lat),
+      lon: String(lon),
+      address: {
+        city: p.city || (['city', 'town', 'village', 'hamlet'].includes(p.osm_value) ? p.name : ''),
+        county: p.county,
+        state: p.state,
+        country: p.country || '',
+        country_code: (p.countrycode || '').toLowerCase(),
+      },
+    };
+  }
+
+  async function reverseGeocode(lat, lng) {
+    let addr, fallbackName;
+    try {
+      const data = await getJson(
+        `${NOMINATIM}/reverse?format=jsonv2&zoom=10&addressdetails=1&accept-language=en&lat=${lat}&lon=${lng}`
+      );
+      if (data.error) throw new Error(data.error);
+      addr = data.address || {};
+      fallbackName = data.name;
+    } catch (err) {
+      const data = await getJson(`${PHOTON}/reverse?lang=en&lat=${lat}&lon=${lng}`);
+      if (!data.features || !data.features.length) throw new Error('no result');
+      const r = fromPhoton(data.features[0]);
+      addr = r.address;
+      fallbackName = r.name;
+    }
+    return {
+      name: bestName(addr, fallbackName),
       country: addr.country || '',
       countryCode: (addr.country_code || '').toLowerCase(),
     };
   }
 
   async function search(query) {
-    const url = `${NOMINATIM}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=en&q=${encodeURIComponent(query)}`;
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error('search failed');
-    return res.json();
+    const q = encodeURIComponent(query);
+    try {
+      return await getJson(`${NOMINATIM}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=en&q=${q}`);
+    } catch (err) {
+      const data = await getJson(`${PHOTON}/api/?lang=en&limit=6&q=${q}`);
+      return (data.features || []).map(fromPhoton);
+    }
   }
 
   // ---------- Search UI ----------

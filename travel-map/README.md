@@ -26,8 +26,8 @@ You can also open `index.html` directly, or host the folder on GitHub Pages, Net
 
 ## How it works
 
-- Map: [Leaflet](https://leafletjs.com/) with [OpenStreetMap](https://www.openstreetmap.org/) tiles, which are free and need no key.
-- Place lookup and search: OpenStreetMap's [Nominatim](https://nominatim.org/) geocoder. It's free for light personal use (about 1 request per second).
+- Map: [Leaflet](https://leafletjs.com/) with [CARTO](https://carto.com/basemaps) basemap tiles built from [OpenStreetMap](https://www.openstreetmap.org/) data. They're free, need no key, and work even when `index.html` is opened straight from disk. (OpenStreetMap's own tile servers block pages opened that way.)
+- Place lookup and search: OpenStreetMap's [Nominatim](https://nominatim.org/) geocoder, falling back to [Photon](https://photon.komoot.io/) if Nominatim refuses the request. Both are free for light personal use.
 - Storage: your pins are saved in the browser's `localStorage`. They stay on that browser only, so use **Export** to keep a backup.
 
 ### Why not Google Maps?
